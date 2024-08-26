@@ -8,7 +8,6 @@
 - **Image Projection**: Display images on a secondary screen with ease.
 - **Audio Playback**: Play sound effects or background music during your sessions.
 - **Modern UI**: Dark and sleek user interface for easy navigation.
-- **Loading Screen**: An elegant loading screen to enhance user experience upon startup.
 
 ## How to Use
 

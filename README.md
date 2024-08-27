@@ -47,7 +47,7 @@
    ```
 3. **Run the Application**:
    ```bash
-   python simplyProjector.py
+   python main.py
    ```
 
 ### For Linux and macOS (via PyInstaller)
@@ -55,7 +55,7 @@
 1. **Clone the Repository** and **Install Dependencies** (as mentioned above).
 2. **Compile the Application**:
    ```bash
-   pyinstaller --onefile simplyProjector.py
+   pyinstaller --onefile main.py
    ```
 3. **Run the Executable**:
    - After compilation, the executable will be found in the `dist/` directory.

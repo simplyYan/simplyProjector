@@ -1,14 +1,12 @@
 import sys
-import time
-from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QThread
-from PyQt5.QtGui import QFont, QKeySequence
-from PyQt5.QtMultimedia import QSound
+from PyQt5.QtCore import Qt, QTimer, QUrl
+from PyQt5.QtGui import QFont, QKeySequence, QPixmap
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QProgressBar, QLabel, QWidget, 
-    QPushButton, QLineEdit, QFileDialog, QListWidget, QHBoxLayout, QShortcut
+    QPushButton, QLineEdit, QFileDialog, QListWidget, QGraphicsScene, 
+    QGraphicsView, QGraphicsPixmapItem, QShortcut
 )
-from PyQt5.QtWidgets import QGraphicsScene, QGraphicsView, QGraphicsPixmapItem
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 
 
 class LoadingScreen(QMainWindow):
@@ -116,6 +114,7 @@ class MainWindow(QMainWindow):
 
         self.shortcuts = {}
         self.projectionWindow = ProjectionWindow()
+        self.audioPlayer = QMediaPlayer()
 
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Load Image", "", "Images (*.png *.jpg *.bmp)")
@@ -144,7 +143,8 @@ class MainWindow(QMainWindow):
             if image_path:
                 self.projectionWindow.show_image(image_path)
             if audio_path:
-                QSound.play(audio_path)
+                self.audioPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(audio_path)))
+                self.audioPlayer.play()
         
         return action
 

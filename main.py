@@ -1,10 +1,11 @@
 import sys
-from PyQt5.QtCore import Qt, QTimer, QUrl
+import time
+from PyQt5.QtCore import Qt, QTimer, QUrl, QPropertyAnimation, pyqtProperty
 from PyQt5.QtGui import QFont, QKeySequence, QPixmap
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QProgressBar, QLabel, QWidget, 
     QPushButton, QLineEdit, QFileDialog, QListWidget, QGraphicsScene, 
-    QGraphicsView, QGraphicsPixmapItem, QShortcut
+    QGraphicsView, QGraphicsPixmapItem, QShortcut, QInputDialog, QMessageBox
 )
 from PyQt5.QtMultimedia import QMediaPlayer, QMediaContent
 
@@ -79,14 +80,32 @@ class ProjectionWindow(QMainWindow):
         self.showFullScreen()
 
 
+class FadeOutMediaPlayer(QMediaPlayer):
+    def __init__(self):
+        super().__init__()
+        self.volume_animation = QPropertyAnimation(self, b"volume")
+        self.volume_animation.setDuration(2000)
+        self.volume_animation.setStartValue(100)
+        self.volume_animation.setEndValue(0)
+        self.volume_animation.finished.connect(self.stop)
+
+    def fade_out(self):
+        self.volume_animation.start()
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("simplyProjector")
-        self.setFixedSize(600, 400)
+        self.setFixedSize(600, 500)
         self.setStyleSheet("background-color: #282c34; color: white;")
         
         layout = QVBoxLayout()
+        
+        self.shortcutNameInput = QLineEdit(self)
+        self.shortcutNameInput.setPlaceholderText("Enter shortcut name (optional)")
+        self.shortcutNameInput.setStyleSheet("background-color: #21252b; color: #61afef;")
+        layout.addWidget(self.shortcutNameInput)
         
         self.shortcutInput = QLineEdit(self)
         self.shortcutInput.setPlaceholderText("Press the shortcut (e.g., CTRL+SHIFT+P)")
@@ -108,13 +127,26 @@ class MainWindow(QMainWindow):
         saveButton.clicked.connect(self.saveShortcut)
         layout.addWidget(saveButton)
 
+        savePresetButton = QPushButton("Save Preset", self)
+        savePresetButton.clicked.connect(self.savePreset)
+        layout.addWidget(savePresetButton)
+
+        loadPresetButton = QPushButton("Load Preset", self)
+        loadPresetButton.clicked.connect(self.loadPreset)
+        layout.addWidget(loadPresetButton)
+
         container = QWidget()
         container.setLayout(layout)
         self.setCentralWidget(container)
 
         self.shortcuts = {}
+        self.presets = {}
         self.projectionWindow = ProjectionWindow()
-        self.audioPlayer = QMediaPlayer()
+        self.audioPlayers = []
+
+        # Global shortcut to stop all sounds with fade out
+        self.stopShortcut = QShortcut(QKeySequence("CTRL+SHIFT+DEL"), self)
+        self.stopShortcut.activated.connect(self.stopAllSounds)
 
     def loadImage(self):
         filePath, _ = QFileDialog.getOpenFileName(self, "Load Image", "", "Images (*.png *.jpg *.bmp)")
@@ -128,12 +160,13 @@ class MainWindow(QMainWindow):
 
     def saveShortcut(self):
         shortcutText = self.shortcutInput.text()
+        shortcutName = self.shortcutNameInput.text().strip() or "Unnamed"
         if shortcutText:
             shortcut = QShortcut(QKeySequence(shortcutText), self)
             action = self.createShortcutAction()
             shortcut.activated.connect(action)
-            self.shortcutList.addItem(f"{shortcutText} -> {action.__name__}")
-            self.shortcuts[shortcutText] = action
+            self.shortcutList.addItem(f"{shortcutName} -> {shortcutText}")
+            self.shortcuts[shortcutText] = (shortcutName, action)
 
     def createShortcutAction(self):
         image_path = getattr(self, 'currentImage', None)
@@ -143,10 +176,31 @@ class MainWindow(QMainWindow):
             if image_path:
                 self.projectionWindow.show_image(image_path)
             if audio_path:
-                self.audioPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(audio_path)))
-                self.audioPlayer.play()
+                audioPlayer = FadeOutMediaPlayer()
+                audioPlayer.setMedia(QMediaContent(QUrl.fromLocalFile(audio_path)))
+                audioPlayer.play()
+                self.audioPlayers.append(audioPlayer)
         
         return action
+
+    def savePreset(self):
+        presetName, ok = QInputDialog.getText(self, "Save Preset", "Enter preset name:")
+        if ok and presetName:
+            self.presets[presetName] = self.shortcuts.copy()
+            QMessageBox.information(self, "Preset Saved", f"Preset '{presetName}' has been saved.")
+
+    def loadPreset(self):
+        presetName, ok = QInputDialog.getItem(self, "Load Preset", "Select preset:", list(self.presets.keys()), 0, False)
+        if ok and presetName:
+            self.shortcuts = self.presets[presetName].copy()
+            self.shortcutList.clear()
+            for shortcutText, (shortcutName, action) in self.shortcuts.items():
+                self.shortcutList.addItem(f"{shortcutName} -> {shortcutText}")
+
+    def stopAllSounds(self):
+        for player in self.audioPlayers:
+            player.fade_out()
+        self.audioPlayers.clear()
 
 
 if __name__ == "__main__":

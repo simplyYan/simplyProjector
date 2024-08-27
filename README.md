@@ -2,6 +2,8 @@
 
 **simplyProjector** is a lightweight and modern tool designed to enhance your experience by allowing you to control what is projected onto a secondary display. With simplyProjector, you can assign custom keyboard shortcuts to display images or play audio files, making your gaming sessions more immersive and streamlined.
 
+<img src='https://raw.githubusercontent.com/simplyYan/simplyProjector/main/simplyProjector.png'></img>
+
 ## Features
 
 - **Custom Keyboard Shortcuts**: Assign shortcuts using combinations like `CTRL + SHIFT + <Key>` to avoid conflicts with other applications.
